@@ -1,0 +1,48 @@
+---
+title: "NYPD Shooting Incident Data Report"
+author: "Holly Nereson"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Import Data
+
+```{r data import, echo=FALSE}
+library(tidyverse)
+library(lubridate)
+
+# Load the data from the URL
+shooting_url <- "https://data.cityofnewyork.us/api/views/833y-fsy8/rows.csv?accessType=DOWNLOAD"
+shooting_data <- read.csv(shooting_url)
+
+shooting_data <- shooting_data %>% 
+  select(-c(INCIDENT_KEY, LOC_OF_OCCUR_DESC,JURISDICTION_CODE,LOC_CLASSFCTN_DESC,STATISTICAL_MURDER_FLAG,X_COORD_CD,Y_COORD_CD,Latitude, Longitude, Lon_Lat))
+
+shooting_data$OCCUR_DATE <- as.Date(shooting_data$OCCUR_DATE, format="%M/%d/%Y")
+
+summary(shooting_data)
+
+```
+
+### Analyze Data
+
+```{r analysis, echo=FALSE}
+
+# add time categories
+shooting_data_2 <- shooting_data %>%
+mutate(
+Hour = as.numeric(sub("^([0-9]{1,2}):.*", "\\1", OCCUR_TIME)),  # Extract hour from OCCUR_TIME
+Time_of_Day = case_when(
+Hour >= 6 & Hour < 12 ~ "Morning",
+Hour >= 12 & Hour < 17 ~ "Afternoon",
+Hour >= 17 & Hour < 21 ~ "Evening",
+TRUE ~ "Night"
+))
+
+
+
+```
