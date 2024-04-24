@@ -1,0 +1,132 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  pdftitle={NYPD Shooting Incident Data Report},
+  pdfauthor={Holly Nereson},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\title{NYPD Shooting Incident Data Report}
+\author{Holly Nereson}
+\date{2024-04-24}
+
+\begin{document}
+\maketitle
+
+\hypertarget{import-data}{%
+\subsubsection{Import Data}\label{import-data}}
+
+\begin{verbatim}
+## -- Attaching core tidyverse packages ------------------------ tidyverse 2.0.0 --
+## v dplyr     1.1.4     v readr     2.1.5
+## v forcats   1.0.0     v stringr   1.5.1
+## v ggplot2   3.5.1     v tibble    3.2.1
+## v lubridate 1.9.3     v tidyr     1.3.1
+## v purrr     1.0.2     
+## -- Conflicts ------------------------------------------ tidyverse_conflicts() --
+## x dplyr::filter() masks stats::filter()
+## x dplyr::lag()    masks stats::lag()
+## i Use the conflicted package (<http://conflicted.r-lib.org/>) to force all conflicts to become errors
+\end{verbatim}
+
+\begin{verbatim}
+##    OCCUR_DATE          OCCUR_TIME            BORO              PRECINCT    
+##  Min.   :2006-04-01   Length:28562       Length:28562       Min.   :  1.0  
+##  1st Qu.:2009-04-21   Class :character   Class :character   1st Qu.: 44.0  
+##  Median :2013-04-22   Mode  :character   Mode  :character   Median : 67.0  
+##  Mean   :2014-03-12                                         Mean   : 65.5  
+##  3rd Qu.:2019-04-25                                         3rd Qu.: 81.0  
+##  Max.   :2023-04-30                                         Max.   :123.0  
+##  NA's   :695                                                               
+##  LOCATION_DESC      PERP_AGE_GROUP       PERP_SEX          PERP_RACE        
+##  Length:28562       Length:28562       Length:28562       Length:28562      
+##  Class :character   Class :character   Class :character   Class :character  
+##  Mode  :character   Mode  :character   Mode  :character   Mode  :character  
+##                                                                             
+##                                                                             
+##                                                                             
+##                                                                             
+##  VIC_AGE_GROUP        VIC_SEX            VIC_RACE        
+##  Length:28562       Length:28562       Length:28562      
+##  Class :character   Class :character   Class :character  
+##  Mode  :character   Mode  :character   Mode  :character  
+##                                                          
+##                                                          
+##                                                          
+## 
+\end{verbatim}
+
+\hypertarget{analyze-data}{%
+\subsubsection{Analyze Data}\label{analyze-data}}
+
+By segmenting a day into 4 parts (Morning, Afternoon, Evening, and
+Night), the data shows us that most incidents happen between 6 PM and 6
+AM.
+
+\includegraphics{NYPD_shooting_report_files/figure-latex/time of day-1.pdf}
+
+Observing the trends in number of incidents happening by year.
+
+\includegraphics{NYPD_shooting_report_files/figure-latex/year counts-1.pdf}
+
+\end{document}

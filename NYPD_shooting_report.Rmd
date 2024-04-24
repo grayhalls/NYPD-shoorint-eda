@@ -6,43 +6,269 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 ```
 
-### Import Data
+```{css, echo=FALSE}
+body {
+  text-align: center;
+}
+table {
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+pre {  /* pre defines style for code blocks */
+  margin-top: 20px;  /* Increase space above the code block */
+  margin-bottom: 20px;  /* Increase space below the code block */
+}
+
+```
+
+## Introduction
+
+This report provides a comprehensive analysis of NYPD shooting incidents recorded from 2006 to 2023. Through a detailed exploration of temporal and spatial patterns, the aim is to uncover underlying trends in the frequency and distribution of shooting incidents across New York City over the past seventeen years.
+
+The data, sourced from the official New York City open data portal, encompasses all recorded shooting incidents, offering insights into not only when and where shootings have occurred but also various demographic and situational contexts of these events. This analysis employs a range of statistical tools and geographic information system (GIS) techniques to evaluate how shooting incidents vary across different times of the day, days of the week, months, and years, as well as their distribution across the city’s five boroughs.
+
+
+### Objectives
+
+The primary objectives of this analysis are to:
+
+1. Identify Temporal Trends: Examine how shooting incidents have fluctuated over the years, assess patterns related to time of day, and evaluate any seasonal variations or significant temporal anomalies.
+2. Analyze Spatial Distribution: Map the locations of shootings to identify hotspots and explore regional variations within the city. This includes assessing whether some precincts or boroughs are more prone to shootings than others.
+3. Impact Assessment: Discuss the potential implications of these patterns for public policy, law enforcement strategies, and community safety initiatives.
+4. Data-Driven Decisions: Provide data-supported recommendations to policymakers and law enforcement agencies to help in strategic planning and resource allocation.
+
+
+### Methodology
+
+The analysis uses R for data cleaning, transformation, and statistical analysis, alongside R Markdown for documenting and reporting the findings. The ggplot2 package is employed for visualization, providing dynamic and informative charts and maps that highlight key trends and distributions. Additionally, dplyr and lubridate are used extensively for data manipulation, ensuring accuracy in temporal analyses.
+
+This document is structured to first address the temporal analysis, followed by the spatial examination, and concluding with a discussion on the implications of the findings along with recommendations.
+
+<br><br>
+
+## Import Data
+
+This is a summary of the tidied dataset. Many columns were removed due to significant missing data or non relevant to this analysis. 
 
 ```{r data import, echo=FALSE}
 library(tidyverse)
 library(lubridate)
+library(knitr)
+library(kableExtra)
+library(broom)
 
 # Load the data from the URL
 shooting_url <- "https://data.cityofnewyork.us/api/views/833y-fsy8/rows.csv?accessType=DOWNLOAD"
 shooting_data <- read.csv(shooting_url)
 
 shooting_data <- shooting_data %>% 
-  select(-c(INCIDENT_KEY, LOC_OF_OCCUR_DESC,JURISDICTION_CODE,LOC_CLASSFCTN_DESC,STATISTICAL_MURDER_FLAG,X_COORD_CD,Y_COORD_CD,Latitude, Longitude, Lon_Lat))
+  select(-c(INCIDENT_KEY, LOC_OF_OCCUR_DESC,JURISDICTION_CODE,LOC_CLASSFCTN_DESC,STATISTICAL_MURDER_FLAG,X_COORD_CD,Y_COORD_CD,Latitude, Longitude, Lon_Lat, LOCATION_DESC, PERP_AGE_GROUP, PERP_SEX,	PERP_RACE))
 
-shooting_data$OCCUR_DATE <- as.Date(shooting_data$OCCUR_DATE, format="%M/%d/%Y")
+shooting_data$OCCUR_DATE <- mdy(shooting_data$OCCUR_DATE)
 
-summary(shooting_data)
+shooting_data$OCCUR_TIME <- hms(shooting_data$OCCUR_TIME)
+
+# Display the summary using knitr::kable for better formatting
+knitr::kable(summary(shooting_data))
+
+```
+<br><br>
+
+## Analyze Data
+
+First, more columns are created to help our time series analysis. These columns are 'Hour', 'Month', 'Year', and 'Time of Day'.
+
+'Time of Day' is defined in the following table:
+
+<br><br>
+
+```{r time of day, echo=FALSE}
+# add time categories
+shooting_data <- shooting_data %>%
+  mutate(
+    Hour = hour(OCCUR_TIME),  # Directly extract the hour from OCCUR_TIME
+    Time_of_Day = case_when(
+      Hour >= 6 & Hour < 12 ~ "Morning",
+      Hour >= 12 & Hour < 18 ~ "Afternoon",
+      Hour >= 18 & Hour <= 23 ~ "Evening",
+      TRUE ~ "Night"
+    )
+  )
+
+# sets order
+shooting_data$Time_of_Day <- factor(shooting_data$Time_of_Day,
+                                    levels = c("Morning", "Afternoon", "Evening", "Night"))
+# Define the dataframe for time categories
+time_categories_df <- data.frame(
+  Category = c("Morning", "Afternoon", "Evening", "Night"),
+  Hours = c("6 AM - 11:59 AM", "12 PM - 5:59 PM", "6 PM - 11:59 PM", "12 AM - 5:59 AM")
+)
+
+# Display the dataframe using kable and kableExtra for styling
+kable(time_categories_df, caption = "Breakdown of Time of Day Categories", format = "html", col.names = c("Time of Day", "Hours Covered")) %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) %>%
+  column_spec(1, width = "20em") %>%  # Adjust width of the first column
+  column_spec(2, width = "30em")  # Adjust width of the second column
+
+
+# Create time of day category table with counts of incidents
+time_of_day_counts <- shooting_data %>%
+dplyr::group_by(Time_of_Day) %>%
+dplyr::summarize(Incidents = n())
+```
+
+<br><br>
+
+By segmenting a day into 4 parts (Morning, Afternoon, Evening, and Night), the data shows that most incidents happen between 6 PM and 6 AM. 
+
+```{r time of day graph, echo=FALSE}
+
+# Create a bar graph for the number of incidents by Time of Day
+ggplot(time_of_day_counts, aes(x = Time_of_Day, y = Incidents, fill = Time_of_Day)) +
+geom_bar(stat = "identity") +
+labs(title = "Number of Shooting Incidents by Time of Day",
+x = "",
+y = "Number of Incidents") +
+theme_minimal() +
+scale_fill_brewer(palette = "Set2")
+
+```
+<br><br>
+
+Even more clear, this graph shows that the fewest incidents happen between 7-9 AM and they increase in frequency until peaking at 11PM.
+
+```{r hourly graph, echo=FALSE}
+hour_counts <- shooting_data %>%
+dplyr::group_by(Hour) %>%
+dplyr::summarize(Incidents = n())
+
+# Create a bar graph for the number of incidents by Time of Day
+ggplot(hour_counts, aes(x = Hour, y = Incidents, fill = Hour)) +
+geom_bar(stat = "identity") +
+scale_fill_gradient(low = "#66C2A5", high = "#8DA0CB") +
+labs(title = "Number of Shooting Incidents by Time of Day",
+x = "Hour of the Day",
+y = "Number of Incidents") +
+theme_minimal()
+
 
 ```
 
-### Analyze Data
+<br><br>
 
-```{r analysis, echo=FALSE}
+Observing the trends in number of incidents happening by year. Incidents were decreasing in frequency until 2020 where incidents jumped up before starting to decrease again.
 
-# add time categories
-shooting_data_2 <- shooting_data %>%
-mutate(
-Hour = as.numeric(sub("^([0-9]{1,2}):.*", "\\1", OCCUR_TIME)),  # Extract hour from OCCUR_TIME
-Time_of_Day = case_when(
-Hour >= 6 & Hour < 12 ~ "Morning",
-Hour >= 12 & Hour < 17 ~ "Afternoon",
-Hour >= 17 & Hour < 21 ~ "Evening",
-TRUE ~ "Night"
-))
+<br><br>
+
+```{r year counts, echo=FALSE}
+shooting_data$Year <- as.numeric(format(shooting_data$OCCUR_DATE, "%Y"))
+
+yearly_counts <- shooting_data %>%
+     group_by(Year) %>%
+     summarize(Incidents = n(), .groups = 'drop')
+
+ggplot(yearly_counts, aes(x = Year, y = Incidents)) +
+  geom_col(fill = "#8DA0CB") +  # geom_col() is used for bar graphs; fill sets the color
+  labs(title = "Yearly Shooting Incidents Over Time",
+    x = "",
+    y = "Number of Incidents") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))  # Rotate x-axis labels for better readability
+
+```
+
+<br><br>
 
 
+
+```{r year boro counts, echo=FALSE}
+yearly_boro_counts <- shooting_data %>%
+  group_by(Year, BORO) %>%
+  summarize(Incidents = n(), .groups = 'drop')
+
+# Plotting the time trends by borough
+ggplot(yearly_boro_counts, aes(x = Year, y = Incidents, group = BORO, color = BORO)) +
+  geom_line() +
+  labs(title = "Trends in Shooting Incidents by Borough",
+    x = "Year",
+    y = "Number of Incidents") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+<br><br>
+
+```{r monthly boro counts, echo=FALSE}
+shooting_data <- shooting_data %>%
+  mutate(
+  Month = month(OCCUR_DATE),  # Adds the month as a numeric value
+  Week_of_Year = week(OCCUR_DATE)  # Adds the ISO week number of the year
+  )
+
+
+monthly_boro_trends <- shooting_data %>%
+  group_by(Month, BORO) %>%
+  summarize(Incidents = n(), .groups = 'drop')
+
+# Plotting the monthly trends by borough
+ggplot(monthly_boro_trends, aes(x = Month, y = Incidents, group = BORO, color = BORO)) +
+  geom_line() +
+  labs(title = "Monthly Trends in Shooting Incidents by Borough",
+    x = "Month of the Year",
+    y = "Number of Incidents") +
+  scale_x_continuous(breaks = 1:12, labels = month.abb) +  # Use abbreviated month names
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+<br><br>
+
+```{r lm, echo=FALSE}
+
+incident_counts <- shooting_data %>%
+  group_by(BORO,Year, Month, Hour) %>%
+  summarize(Incidents = n(), .groups = 'drop')
+
+incident_counts$Month <- factor(incident_counts$Month, levels = 1:12, labels = month.abb)
+
+model <- lm(Incidents ~ BORO + Month, data = incident_counts)
+
+
+# Summary using broom and render with knitr::kable
+model_summary <- tidy(model)
+kable(model_summary, format = "markdown", 
+      col.names = c("Term", "Estimate", "Std. Error", "Statistic", "P-value"), 
+      caption = "Regression Analysis Summary: Effects of Borough and Month on Shooting Incidents") %>%
+  kable_styling(bootstrap_options = c("striped", "hover"))
+
+model_summary <- summary(model)
+
+# Extract R-squared and other relevant statistics
+r_squared <- model_summary$r.squared
+adj_r_squared <- model_summary$adj.r.squared
+f_statistic <- model_summary$fstatistic
+p_value <- pf(f_statistic[1], f_statistic[2], f_statistic[3], lower.tail = FALSE)
+
+# Create a data frame to hold these statistics
+summary_stats <- data.frame(
+  Metric = c("R-squared", "Adjusted R-squared", "F-statistic", "P-value"),
+  Value = c(r_squared, adj_r_squared, f_statistic[1], p_value)
+)
+
+# Print the summary statistics using kable
+kable(summary_stats, format = "markdown", 
+      col.names = c("Metric", "Value"), 
+      caption = "Model Summary Statistics")
 
 ```
