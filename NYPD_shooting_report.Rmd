@@ -5,36 +5,17 @@ date: "`r Sys.Date()`"
 output: html_document
 ---
 
+<br><br>
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
-```
-
-```{css, echo=FALSE}
-body {
-  text-align: center;
-}
-table {
-  margin-left: auto;
-  margin-right: auto;
-}
-img {
-  display: block;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-pre {  /* pre defines style for code blocks */
-  margin-top: 20px;  /* Increase space above the code block */
-  margin-bottom: 20px;  /* Increase space below the code block */
-}
-
 ```
 
 ## Introduction
 
 This report provides a comprehensive analysis of NYPD shooting incidents recorded from 2006 to 2023. Through a detailed exploration of temporal and spatial patterns, the aim is to uncover underlying trends in the frequency and distribution of shooting incidents across New York City over the past seventeen years.
 
-The data, sourced from the official New York City open data portal, encompasses all recorded shooting incidents, offering insights into not only when and where shootings have occurred but also various demographic and situational contexts of these events. This analysis employs a range of statistical tools and geographic information system (GIS) techniques to evaluate how shooting incidents vary across different times of the day, days of the week, months, and years, as well as their distribution across the city’s five boroughs.
+The data, sourced from the official New York City open data portal, encompasses all recorded shooting incidents, offering insights into not only when and where shootings have occurred but also various demographic and situational contexts of these events. This analysis employs a data analysis and a simple linear model to evaluate how shooting incidents vary across different times of the day, months, and years, as well as their distribution across the city’s five boroughs.
 
 
 ### Objectives
@@ -43,23 +24,22 @@ The primary objectives of this analysis are to:
 
 1. Identify Temporal Trends: Examine how shooting incidents have fluctuated over the years, assess patterns related to time of day, and evaluate any seasonal variations or significant temporal anomalies.
 2. Analyze Spatial Distribution: Map the locations of shootings to identify hotspots and explore regional variations within the city. This includes assessing whether some precincts or boroughs are more prone to shootings than others.
-3. Impact Assessment: Discuss the potential implications of these patterns for public policy, law enforcement strategies, and community safety initiatives.
-4. Data-Driven Decisions: Provide data-supported recommendations to policymakers and law enforcement agencies to help in strategic planning and resource allocation.
+3. Predictive Modeling: Use linear regression to assess how different factors, such as borough and month, affect the likelihood of shootings.
 
 
 ### Methodology
 
 The analysis uses R for data cleaning, transformation, and statistical analysis, alongside R Markdown for documenting and reporting the findings. The ggplot2 package is employed for visualization, providing dynamic and informative charts and maps that highlight key trends and distributions. Additionally, dplyr and lubridate are used extensively for data manipulation, ensuring accuracy in temporal analyses.
 
-This document is structured to first address the temporal analysis, followed by the spatial examination, and concluding with a discussion on the implications of the findings along with recommendations.
+This document is structured to first address the temporal analysis, followed by the spatial examination, and concluding with the linear regression model.
 
 <br><br>
 
 ## Import Data
 
-This is a summary of the tidied dataset. Many columns were removed due to significant missing data or non relevant to this analysis. 
+In this section, we import and clean the shooting incidents data from the New York City Open Data portal. Non-essential columns, especially those with substantial missing data or those irrelevant for our analysis, have been removed to streamline the dataset for more focused analysis.
 
-```{r data import, echo=FALSE}
+```{r data import}
 library(tidyverse)
 library(lubridate)
 library(knitr)
@@ -70,9 +50,11 @@ library(broom)
 shooting_url <- "https://data.cityofnewyork.us/api/views/833y-fsy8/rows.csv?accessType=DOWNLOAD"
 shooting_data <- read.csv(shooting_url)
 
+# Remove unnecessary columns
 shooting_data <- shooting_data %>% 
   select(-c(INCIDENT_KEY, LOC_OF_OCCUR_DESC,JURISDICTION_CODE,LOC_CLASSFCTN_DESC,STATISTICAL_MURDER_FLAG,X_COORD_CD,Y_COORD_CD,Latitude, Longitude, Lon_Lat, LOCATION_DESC, PERP_AGE_GROUP, PERP_SEX,	PERP_RACE))
 
+# Clean data types
 shooting_data$OCCUR_DATE <- mdy(shooting_data$OCCUR_DATE)
 
 shooting_data$OCCUR_TIME <- hms(shooting_data$OCCUR_TIME)
@@ -83,15 +65,12 @@ knitr::kable(summary(shooting_data))
 ```
 <br><br>
 
-## Analyze Data
+## Temporal Analysis
 
-First, more columns are created to help our time series analysis. These columns are 'Hour', 'Month', 'Year', and 'Time of Day'.
+We enhance the dataset by extracting additional time-related attributes such as 'Hour', 'Month', 'Year', and 'Time of Day'. These new columns facilitate a detailed time series analysis to explore patterns in shooting incidents.
 
-'Time of Day' is defined in the following table:
 
-<br><br>
-
-```{r time of day, echo=FALSE}
+```{r time of day}
 # add time categories
 shooting_data <- shooting_data %>%
   mutate(
@@ -128,9 +107,9 @@ dplyr::summarize(Incidents = n())
 
 <br><br>
 
-By segmenting a day into 4 parts (Morning, Afternoon, Evening, and Night), the data shows that most incidents happen between 6 PM and 6 AM. 
+We visualize the number of incidents throughout the day and across the years to identify any significant temporal trends. The analysis reveals peak times for incidents and variations over the years, offering insights into the dynamics of urban safety. By segmenting a day into 4 parts (Morning, Afternoon, Evening, and Night), the data shows that most incidents happen between 6 PM and 6 AM. 
 
-```{r time of day graph, echo=FALSE}
+```{r time of day graph}
 
 # Create a bar graph for the number of incidents by Time of Day
 ggplot(time_of_day_counts, aes(x = Time_of_Day, y = Incidents, fill = Time_of_Day)) +
@@ -144,9 +123,10 @@ scale_fill_brewer(palette = "Set2")
 ```
 <br><br>
 
-Even more clear, this graph shows that the fewest incidents happen between 7-9 AM and they increase in frequency until peaking at 11PM.
+This section explores the distribution of shooting incidents across different hours of the day. The data highlights critical times when incidents are most frequent, providing insights into the daily patterns of urban violence.
+This visualization clearly shows that shooting incidents are least frequent in the early morning hours, gradually increasing and peaking at night, specifically around 11 PM, indicating possible times of increased vigilance.
 
-```{r hourly graph, echo=FALSE}
+```{r hourly graph}
 hour_counts <- shooting_data %>%
 dplyr::group_by(Hour) %>%
 dplyr::summarize(Incidents = n())
@@ -165,11 +145,11 @@ theme_minimal()
 
 <br><br>
 
-Observing the trends in number of incidents happening by year. Incidents were decreasing in frequency until 2020 where incidents jumped up before starting to decrease again.
+We assess the yearly trends to identify fluctuations in the frequency of shooting incidents over time. This analysis helps to understand broader temporal trends and may inform discussions on law enforcement and community safety strategies. Incidents were decreasing in frequency until 2020 where incidents jumped up before starting to decrease again.
 
 <br><br>
 
-```{r year counts, echo=FALSE}
+```{r year counts}
 shooting_data$Year <- as.numeric(format(shooting_data$OCCUR_DATE, "%Y"))
 
 yearly_counts <- shooting_data %>%
@@ -188,9 +168,11 @@ ggplot(yearly_counts, aes(x = Year, y = Incidents)) +
 
 <br><br>
 
+## Spatial Analysis
 
+We delve deeper into the data by examining trends across different boroughs, highlighting geographical disparities in incident rates and variability. It is clear that there is high variability between the boroughs. Staten Island has a very low number of incidents and very low variability with no clear trends. Brooklyn and Bronx have a high number of incidents and high variability. 
 
-```{r year boro counts, echo=FALSE}
+```{r year boro counts}
 yearly_boro_counts <- shooting_data %>%
   group_by(Year, BORO) %>%
   summarize(Incidents = n(), .groups = 'drop')
@@ -208,7 +190,9 @@ ggplot(yearly_boro_counts, aes(x = Year, y = Incidents, group = BORO, color = BO
 
 <br><br>
 
-```{r monthly boro counts, echo=FALSE}
+Next, we explore seasonal patterns in shooting incidents to identify peak months of activity and their variation across boroughs, which could be pivotal for planning community interventions and police deployments. As expected, there is clear seasonality with the number of incidents peaking in July (summer months) and dipping in February (winter months).
+
+```{r monthly boro counts}
 shooting_data <- shooting_data %>%
   mutate(
   Month = month(OCCUR_DATE),  # Adds the month as a numeric value
@@ -234,7 +218,14 @@ ggplot(monthly_boro_trends, aes(x = Month, y = Incidents, group = BORO, color = 
 
 <br><br>
 
-```{r lm, echo=FALSE}
+## Linear Model
+
+To further understand the factors influencing the number of shooting incidents in New York City, we developed a linear regression model. This model quantifies the impact of different boroughs and months on the incidence rates. Given the rich diversity of data available, we carefully selected features that significantly contribute to the model's predictive power and robustness, focusing on borough and month of the year to prevent overfitting.
+
+With the dataset segmented by borough and month, we applied a linear regression model to discern patterns in how these variables affect shooting incident frequencies. The results elucidate the relative effects of each borough and month on the likelihood of shootings, providing a clear statistical foundation for understanding these dynamics.
+
+
+```{r lm}
 
 incident_counts <- shooting_data %>%
   group_by(BORO,Year, Month, Hour) %>%
@@ -272,3 +263,55 @@ kable(summary_stats, format = "markdown",
       caption = "Model Summary Statistics")
 
 ```
+
+<br><br>
+
+## Conclusions and Interpretation of Linear Model Results
+
+The linear regression model analysis provides valuable insights into the dynamics of shooting incidents in New York City:
+
+#### Borough Impact
+- **Bronx (Reference)**: Compared to this baseline, the coefficients suggest significant variations across boroughs.
+- **Brooklyn**: Coefficient = `0.35547`, indicates more incidents than in the Bronx, implying a higher risk level.
+- **Manhattan**: Coefficient = `-0.84932`, indicating fewer incidents than in the Bronx, suggesting a lower risk level.
+- **Queens**: Coefficient = `-0.79904`, also indicating fewer incidents than in the Bronx.
+- **Staten Island**: Coefficient = `-1.40901`, showing the fewest incidents among all boroughs and highlighting its relative safety.
+
+#### Seasonal Variations
+- **Peak Months**: July shows the highest increase in incidents (Coefficient = `1.18516`), suggesting the need for heightened vigilance and resources during this month.
+- **Lowest Month**: February (Coefficient = `-0.19322` relative to January) shows a significant decrease, which could influence strategic planning in law enforcement efforts.
+
+#### Model Fit and Significance
+- **Explained Variance**: The model's R-squared value is `0.09762`, indicating it explains about 9.76% of the variance in shooting incidents.
+- **Overall Model Significance**: The F-statistic is `82.13` with a p-value of `< 2.2e-16`, confirming that the model is statistically significant despite the low R-squared.
+
+### Implications
+
+The findings from this model are instrumental for policy-makers and law enforcement agencies in allocating resources and timing interventions effectively. Given the model's indications, strategic increases in police presence or community programs could be timed to coincide with identified peak periods and focused in areas with higher incident rates.
+
+However, the complexity of factors influencing shooting incidents, suggested by the low R-squared value, calls for a multifaceted approach to crime prevention. Further research incorporating more variables could enhance understanding and effectiveness of interventions.
+
+### Considerations of Potential Bias in the Analysis
+
+As with any analytical project, recognizing and acknowledging the sources of potential bias is critical to the interpretation of the results. This analysis may contain biases stemming from several unaddressed factors:
+
+- **Demographic Variations**: We have not adjusted for differences in population size, demographic shifts, or socio-economic disparities between boroughs. These factors could significantly influence the rate and reporting of shooting incidents. For instance, if population adjustments were made, the apparent disparities in shooting incidents across boroughs might diminish or reveal different patterns.
+
+- **Preventive Interventions**: Our model does not account for shooting incidents that were potentially prevented by police interventions, which might vary seasonally and by location. For example, during winter months, decreased pedestrian and vehicle traffic might lead to fewer interactions and opportunities for violence, concurrently increasing the effectiveness of police patrols and interventions. Ignoring these preventive measures could overestimate the true incidence rates during these times.
+
+- **Reporting Standards and Practices**: Variations in how incidents are reported across different precincts or changes in law enforcement practices over time could lead to inconsistencies in the data. This variation can skew the understanding of trends and the effectiveness of interventions.
+
+- **Other Crime-Related Statistics**: We did not include correlated crime statistics such as drug offenses or gang activity, which could be underlying drivers of shooting incidents. The absence of these variables might lead to an oversimplified analysis of the causes and predictors of shootings.
+
+By considering these additional dimensions of potential bias, future research could enhance the accuracy and applicability of findings. Addressing these biases may involve integrating more comprehensive datasets, employing advanced statistical methods to control for unobserved confounders, or designing longitudinal studies that can track changes over time and across different policy environments.
+
+I attempted to limit my personal bias by making this analysis simple and considering the most objective data points. This would be much more difficult for analyses where I have a vested interested in the conclusions.
+
+<br><br>
+
+## References
+
+- Data sourced from [NYC Open Data](https://opendata.cityofnewyork.us/).
+- R documentation and tutorials.
+
+<br><br>
