@@ -33,6 +33,8 @@ The analysis uses R for data cleaning, transformation, and statistical analysis,
 
 This document is structured to first address the temporal analysis, followed by the spatial examination, and concluding with the linear regression model.
 
+Be sure to install the following packages if you don't have them installed already: tidyverse, lubridate, knitr, kableExtra, broom.
+
 <br><br>
 
 ## Import Data
