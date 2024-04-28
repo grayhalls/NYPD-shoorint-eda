@@ -5,6 +5,9 @@ date: "`r Sys.Date()`"
 output: html_document
 ---
 
+<!-- Warning: Packages not installed in class -->
+<!-- you need to run install.packages(c("tidyverse", "lubridate", "knitr", "kableExtra", "broom")) in the console -->
+
 <br><br>
 
 ```{r setup, include=FALSE}
