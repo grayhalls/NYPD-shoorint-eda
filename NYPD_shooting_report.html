@@ -11,7 +11,7 @@
 
 <meta name="author" content="Holly Nereson" />
 
-<meta name="date" content="2024-04-26" />
+<meta name="date" content="2024-04-28" />
 
 <title>NYPD Shooting Incident Data Report</title>
 
@@ -576,7 +576,7 @@ display: none;
 
 <h1 class="title toc-ignore">NYPD Shooting Incident Data Report</h1>
 <h4 class="author">Holly Nereson</h4>
-<h4 class="date">2024-04-26</h4>
+<h4 class="date">2024-04-28</h4>
 
 </div>
 
@@ -624,6 +624,10 @@ analyses.</p>
 <p>This document is structured to first address the temporal analysis,
 followed by the spatial examination, and concluding with the linear
 regression model.</p>
+<p><strong>Be sure to install the following packages if you don’t have
+them installed already: tidyverse, lubridate, knitr, kableExtra,
+broom.</strong> Run install.packages(c(“tidyverse”, “lubridate”,
+“knitr”, “kableExtra”, “broom”))</p>
 <p><br><br></p>
 </div>
 </div>
@@ -634,7 +638,10 @@ the New York City Open Data portal. Non-essential columns, especially
 those with substantial missing data or those irrelevant for our
 analysis, have been removed to streamline the dataset for more focused
 analysis.</p>
-<pre class="r"><code>library(tidyverse)
+<pre class="r"><code># you need to run install.packages(c(&quot;tidyverse&quot;, &quot;lubridate&quot;, &quot;knitr&quot;, &quot;kableExtra&quot;, &quot;broom&quot;))
+# kableExtra and broom were not installed in class
+
+library(tidyverse)
 library(lubridate)
 library(knitr)
 library(kableExtra)

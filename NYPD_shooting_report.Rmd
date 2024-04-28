@@ -33,7 +33,8 @@ The analysis uses R for data cleaning, transformation, and statistical analysis,
 
 This document is structured to first address the temporal analysis, followed by the spatial examination, and concluding with the linear regression model.
 
-Be sure to install the following packages if you don't have them installed already: tidyverse, lubridate, knitr, kableExtra, broom.
+**Be sure to install the following packages if you don't have them installed already: tidyverse, lubridate, knitr, kableExtra, broom.**
+Run install.packages(c("tidyverse", "lubridate", "knitr", "kableExtra", "broom"))
 
 <br><br>
 
@@ -42,6 +43,9 @@ Be sure to install the following packages if you don't have them installed alrea
 In this section, we import and clean the shooting incidents data from the New York City Open Data portal. Non-essential columns, especially those with substantial missing data or those irrelevant for our analysis, have been removed to streamline the dataset for more focused analysis.
 
 ```{r data import}
+# you need to run install.packages(c("tidyverse", "lubridate", "knitr", "kableExtra", "broom"))
+# kableExtra and broom were not installed in class
+
 library(tidyverse)
 library(lubridate)
 library(knitr)
